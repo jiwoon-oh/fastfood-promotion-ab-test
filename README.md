@@ -1,663 +1,294 @@
-# 🍔 Fast-Food Promotion Experiment Analysis
+# Fast-Food Promotion A/B Test: Which Campaign Should Stay?
 
-### 🔗 Project
+[한국어](README.ko.md) · [Kaggle dataset](https://www.kaggle.com/datasets/chebotinaa/fast-food-marketing-campaign-ab-test)
 
-[View Interactive Project →](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/)
+## Project background
 
-### 📂 Repository
+A fast-food chain tested three promotions while preparing to introduce a new menu item. Each participating store received one promotion, and sales were recorded for four weeks. My goal was to compare the three options and decide which campaign the chain should consider keeping.
 
-This repository contains the data preprocessing, exploratory analysis and statistical analysis workflow used in the project.
+Promotion 2 had the lowest average sales. That was easy to see, but it was not yet a sound basis for a recommendation. The stores were in different-sized markets, and four weekly observations from the same store were not four independent experimental units. I therefore started with the data structure, checked statistical assumptions, and tested whether the main result held under several alternative analyses.
 
-## 📌 Overview
+**Promotion 2 had lower sales than both Promotion 1 and Promotion 3. I could not establish a statistically significant difference between Promotions 1 and 3.** Importantly, there was no no-promotion control group. The findings compare the three campaigns with each other; they do not establish how much additional revenue any campaign generated compared with doing nothing.
 
-A fast-food chain planned to introduce a new menu item and tested three different promotional strategies across multiple stores.
+## 1. Questions
 
-The company had not yet determined which promotion was the most effective. Each store was assigned one of three promotions, and sales data was collected over a four-week period.
+1. Do mean store-level sales differ across the three promotions?
+2. If they differ, which pairs of promotions account for the result?
+3. Could market size, store age, or unusual sales observations explain the difference?
+4. Does the answer survive alternative statistical tests and sensitivity checks?
 
-This project evaluates whether the promotional strategies produced statistically significant differences in sales and provides a data-driven recommendation for the business.
+The business decision concerns revenue performance. Profitability requires cost information that is not in this dataset.
 
----
+## 2. Data
 
-# 🎯 Business Question
+### Source and structure
 
-> **Which of the three promotional strategies generated the strongest sales performance?**
+I used Kaggle's *Fast Food Marketing Campaign A/B Test* dataset for a portfolio analysis. The original data does not let me independently verify every detail of the campaign allocation process or calculate campaign costs.
 
-More specifically:
+| Item | Count |
+|---|---:|
+| Observations | 548 |
+| Variables | 7 |
+| Unique stores | 137 |
+| Observed weeks per store | 4 |
+| Promotion groups | 3 |
 
-* Did average sales differ significantly between the three promotions?
-* Which promotion performed significantly better or worse than the others?
-* Could differences in market characteristics explain the results?
-* Were the findings robust to outliers and multiple statistical tests?
+| Column | Meaning |
+|---|---|
+| `MarketID` | Identifier for the market containing the store |
+| `LocationID` | Store identifier |
+| `MarketSize` | Small, Medium, or Large market |
+| `Promotion` | Campaign assigned to the store (1, 2, or 3) |
+| `Week` | Observation week |
+| `SalesInThousands` | Weekly sales, in thousands of USD |
+| `AgeOfStore` | Age of the store |
 
----
+Although promotions were recorded as numbers, I treated them as categories rather than an ordered numerical variable.
 
-# 📊 Dataset
+### Data-quality checks
 
-### Data Source
+Before running tests, I checked the experimental structure.
 
-This project uses the Fast Food Marketing Campaign A/B Test dataset obtained from Kaggle.
+| Check | Result |
+|---|---|
+| Missing values | None |
+| Duplicate rows | None |
+| Duplicate store-week combinations | None |
+| Stores assigned to more than one promotion | None |
+| Stores assigned to more than one market | None |
+| Stores with fewer or more than four weekly records | None |
 
-Source: Kaggle
-Dataset: Fast Food Marketing Campaign A\B Test
+These checks did not reveal missing records or conflicting assignment data within the dataset.
 
-The dataset contains sales observations from multiple fast-food restaurant locations assigned to one of three promotional campaigns over a four-week period.
+## 3. Sample Ratio Mismatch (SRM)
 
-This dataset was used for educational and portfolio purposes. The analysis, statistical methodology, interpretations, and business recommendations presented in this project are my own.
+An unusually uneven allocation of stores could point to a problem with the experiment. I checked sample ratio mismatch at the **store level**, not at the row level, because assignment was made once for each store.
 
-### Dataset Size
+- Experimental units checked: **137 stores**
+- Chi-square allocation check: **p = 0.8898**
+- Significance threshold: `α = 0.05`
 
-* **548 observations**
-* **7 variables**
-* **137 stores**
-* **4 weeks of sales data per store**
+I found no evidence of an allocation-ratio mismatch under the assumed equal-allocation design. This is a useful check, but it does not prove that the campaign assignment was randomized correctly in every respect.
 
-Each store was assigned a single promotion and observed for four weeks.
+## 4. Outliers: investigate before deleting
 
-### Key Variables
-
-| Variable           | Description                                             |
-| ------------------ | ------------------------------------------------------- |
-| `MarketID`         | Geographic market where stores are located              |
-| `LocationID`       | Individual store identifier                             |
-| `MarketSize`       | Market size category (Small, Medium, Large)             |
-| `Promotion`        | Promotional strategy assigned to the store (1, 2, or 3) |
-| `Week`             | Observation week                                        |
-| `SalesInThousands` | Weekly sales revenue in thousands of dollars            |
-| `AgeOfStore`       | Store age                                               |
-
-Although `Promotion` was stored numerically as `1`, `2`, and `3`, it was treated as a **categorical variable** during the analysis.
-
----
-
-# 🔍 Data Quality Checks
-
-The dataset was examined before conducting statistical tests.
-
-### Validation Results
-
-* Missing values: **0**
-* Duplicate rows: **0**
-* Duplicate store-week observations: **0**
-* Stores assigned to multiple promotions: **0**
-* Stores assigned to multiple markets: **0**
-* Each store contained the expected **4 weeks of observations**
-
-These checks confirmed that the experimental structure was internally consistent.
-
----
-
-# 🎲 Sample Ratio Mismatch (SRM) Check
-
-Because the experiment was assigned at the **store level**, SRM was evaluated using the 137 unique stores rather than the 548 weekly observations.
-
-Each store was collapsed into a single experimental assignment record for this check.
-
-### Result
-
-**p = 0.8898**
-
-The observed allocation was consistent with what could reasonably occur under random assignment.
-
-> **Conclusion: No evidence of Sample Ratio Mismatch (SRM).**
-
----
-
-# 🔎 Outlier Analysis
-
-Outliers were examined using the **IQR method**.
-
-Most high-value observations were concentrated in:
-
-* `MarketID = 3`
-* `MarketSize = Large`
-
-This suggested that many apparent outliers reflected genuine differences in market characteristics rather than data errors.
-
-One store required additional investigation:
+An IQR-based scan flagged several relatively high sales observations. Many of them belonged to `MarketID = 3` and stores in **Large** markets. Higher sales in a larger market can be genuine business variation, not necessarily a recording error.
 
 ### Store `LocationID = 507`
 
-One weekly observation showed unusually low sales compared with other stores.
+One weekly observation was unusually low relative to other stores. I considered both a data-entry error and an actual short-term disruption, such as stock shortages or temporary operational issues.
 
-Possible explanations included:
+- The unusual value did not establish a pattern across all four weeks.
+- I had no direct evidence that it was entered incorrectly.
+- I could evaluate its influence with a sensitivity analysis later.
 
-1. Data entry error
-2. A genuine temporary decline caused by operational factors such as inventory shortages, temporary closure, or other unobserved events
+I kept the record in the initial analysis rather than removing it automatically. A flagged outlier is a reason to investigate, not by itself a reason to discard data.
 
-The observation was retained because:
+## 5. Why I used 137 stores instead of 548 rows
 
-* Only one weekly observation was unusually low
-* There was no clear evidence of a data-entry error
-* The value was not extreme enough to justify automatic removal
-* A later sensitivity analysis was conducted to evaluate its impact
+Every store appears four times in the raw data. Weekly sales from one store are likely related: a store that sells more than others in Week 1 will often remain relatively strong in Week 2. Treating all 548 observations as independent would overstate the amount of independent information available.
 
----
+There were two reasonable approaches:
 
-# ⚠️ Independence of Observations
+| Approach | Benefit | Trade-off |
+|---|---|---|
+| Average the four weeks for each store | One observation per experimental unit; clear comparison of store averages | Loses week-to-week detail |
+| Repeated-measures ANOVA or a mixed-effects model | Retains weekly records and accounts for within-store dependence | More demanding model specification and interpretation |
 
-The original dataset contained four weekly observations for each store.
+### Does week explain sales variation?
 
-This creates a potential violation of the independence assumption because sales from the same store across multiple weeks are likely correlated.
+I checked whether there was a common week effect before aggregating the observations.
 
-For example:
+- Week-effect test: `p = 0.9935`
+- Between-store variation was about **3.4 times** within-store weekly variation.
 
-> A store with high sales in Week 1 is likely to have relatively high sales in Week 2.
+There was no detected common week effect across the four weeks, while persistent differences between stores were much larger. I chose the **four-week average sales per store** as the main outcome, leaving 137 store-level observations.
 
-Two approaches were considered:
+This was a practical choice for the question at hand, not a claim that aggregation is always preferable. A mixed-effects model would be a useful extension if weekly dynamics were the main focus.
 
-### Option 1 — Aggregate Sales by Store
+## 6. Exploring sales distributions
 
-Calculate the average sales across four weeks for each store.
+The combined distribution looked somewhat bimodal. The grouping of markets and campaigns appeared to explain part of that shape, and larger markets contributed several high-sales observations.
 
-* One observation per store
-* 137 independent store-level observations
-* Suitable for One-Way ANOVA
+![Distribution of average weekly sales by promotion — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/box.png)
 
-### Option 2 — Repeated Measures ANOVA / Mixed Effects Model
+The chart suggested that Promotion 2 performed less well. I still needed to check whether that apparent difference could reasonably be attributed to sampling variation.
 
-Preserve weekly observations while modeling within-store correlation.
-
-This approach retains more temporal information but requires a more complex modeling framework.
-
----
-
-# 📅 Does Week Affect Sales?
-
-Before aggregating the data, the potential effect of week was examined.
-
-### Result
-
-**p = 0.9935**
-
-There was no evidence that the observation week significantly affected sales.
-
-Additionally, the analysis showed that:
-
-> **Between-store variation was approximately 3.4 times larger than within-store weekly variation.**
-
-This suggested that weekly variation contributed relatively little compared with persistent differences between stores.
-
-### Decision
-
-The dataset was aggregated to:
-
-> **One average sales value per store**
-
-This produced **137 store-level observations** for the main analysis.
-
----
-
-# 📈 Exploratory Distribution Analysis
-
-The overall sales distribution appeared somewhat bimodal.
-
-However, this pattern was largely explained by differences between promotional groups and market characteristics.
-
-Normality was therefore evaluated formally before relying solely on parametric methods.
-
----
-
-# 🧪 Statistical Hypotheses
-
-### Null Hypothesis (H₀)
-
-> The mean sales are equal across all three promotions.
-
-### Alternative Hypothesis (H₁)
-
-> At least one promotion has a different mean sales level.
-
-### Significance Level
-
-**α = 0.05**
-
----
-
-# 📊 Normality Check
-
-## Part 1 — Q-Q Plots
-
-The Q-Q plots showed similar overall patterns across the three promotional groups.
-
-However, deviations were observed in the upper tail, largely associated with high-sales stores in large markets.
-
-The distributions were therefore not perfectly normal.
-
----
-
-## Part 2 — Shapiro-Wilk Test
-
-The Shapiro-Wilk test indicated that the normality assumption was violated.
-
-Rather than relying exclusively on ANOVA, both:
-
-* **One-Way ANOVA**
-* **Kruskal-Wallis Test**
-
-were conducted to determine whether the conclusion remained consistent across parametric and non-parametric approaches.
-
----
-
-# ⚖️ Homogeneity of Variance
-
-Because normality was not fully satisfied, **Levene's Test** was used to evaluate equality of variances.
+## 7. Statistical testing
 
 ### Hypotheses
 
-**H₀:** Variances are equal across promotional groups.
+- **H₀:** Mean store-level sales are equal under Promotions 1, 2, and 3.
+- **H₁:** At least one group has a different mean.
+- **Significance level:** `α = 0.05`.
 
-**H₁:** At least one group has a different variance.
+### 7.1 Normality: Q–Q plots and Shapiro–Wilk
 
-### Result
+The Q–Q plots showed similar patterns across the campaigns, but their upper tails departed from the theoretical normal distribution. Shapiro–Wilk tests also indicated departures from normality.
 
-**p = 0.6272**
+I used one-way ANOVA for a comparison of means and added Kruskal–Wallis as a nonparametric check. This way, the conclusion would not rely on a single set of distributional assumptions.
 
-The null hypothesis could not be rejected.
+### 7.2 Equal variances: Levene's test
 
-> **Conclusion: The group variances were statistically similar.**
+- Null hypothesis: sales variances are equal across the three groups.
+- Result: **p = 0.6272**.
 
----
+There was insufficient evidence to reject equal variances. That does not establish that the three true variances are exactly the same; it means this sample did not show a clear difference.
 
-# 🧪 One-Way ANOVA
+### 7.3 One-way ANOVA
 
-### Result
+- **F = 5.8458**
+- **p = 0.0037**
 
-* **F = 5.8458**
-* **p = 0.0037**
+The three means were not all consistent with a common group mean. ANOVA does not identify which specific promotions differ, so I followed it with pairwise comparisons.
 
-The null hypothesis was rejected.
+### 7.4 Kruskal–Wallis
 
-> **Average sales differed significantly between at least two promotional groups.**
+I also ran a rank-based comparison because the normality assumption was not fully met.
 
-However, ANOVA alone does not identify which specific groups differ.
+- **H = 17.3274**
+- Degrees of freedom: `2`
+- **p = 0.0002**
+- Chi-square critical value at `α = 0.05`: `5.9915`
 
-Therefore, a post-hoc comparison was required.
+This test also found differences among the groups. Strictly speaking, Kruskal–Wallis concerns the distributions/ranks, not precisely the same mean parameter as ANOVA. Their agreement makes the overall finding less dependent on one test.
 
----
+### 7.5 Tukey HSD: locating the differences
 
-# 📊 Kruskal-Wallis Test
+| Comparison | Mean weekly difference per store | p-value | Cohen's d | Interpretation |
+|---|---:|---:|---:|---|
+| Promotion 1 − 2 | approx. **+$10,769** | **0.004** | **0.706** | Significant; medium-to-large gap |
+| Promotion 1 − 3 | approx. **+$2,734** | 0.6862 | 0.169 | No detected significant difference |
+| Promotion 3 − 2 | approx. **+$8,035** | **0.037** | **0.519** (absolute value) | Significant; medium-sized gap |
 
-Because the normality assumption was violated, a non-parametric robustness check was also performed.
+With the opposite comparison order, the original Cohen's d for Promotion 2 versus 3 is reported as `−0.519`. The table uses the absolute magnitude for readability.
 
-### Result
+![Tukey pairwise differences and confidence intervals — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/tukey.png)
 
-* **H = 17.3274**
-* **p = 0.0002**
+Promotion 2 had significantly lower sales than either alternative. Promotion 1 versus 3 was not statistically significant, but **lack of significance is not proof of equivalence**. The data were not strong enough to establish which of those two performs better.
 
-With:
+### 7.6 Effect size: eta squared
 
-* Degrees of freedom = 2
-* Critical value at α = 0.05 = **5.9915**
+- **η² = 0.0802**
+- Roughly **8%** of the observed variation in store sales was associated with promotion-group differences.
 
-The observed H statistic was substantially larger than the critical value.
+Conventional reference values sometimes label η² of 0.01, 0.06, and 0.14 as small, medium, and large. By that rule, this was a medium-sized association. Market size, store characteristics, age, and other unobserved factors could account for much of the remaining variation.
 
-> **Conclusion: Sales distributions differed significantly between promotional groups.**
+## 8. Sensitivity to one unusual observation
 
-Both ANOVA and Kruskal-Wallis produced the same overall conclusion.
+I repeated the ANOVA after temporarily excluding the unusual record from `LocationID = 507`.
 
----
+| Data | F | p-value |
+|---|---:|---:|
+| Original data | 5.8458 | 0.0037 |
+| After exclusion | 5.7780 | 0.0039 |
 
-# 🔍 Post-Hoc Analysis — Tukey's HSD
+The result hardly changed. The overall conclusion was not driven by this observation, so I retained the original data for the final analysis.
 
-Tukey's HSD was used to identify which promotions differed significantly.
+## 9. Could store characteristics explain Promotion 2's result?
 
-## Promotion 1 vs Promotion 2
+If Promotion 2 had been used mainly in smaller markets, its lower average sales might reflect market composition rather than the campaign. I checked group balance and then ran a model that accounted for market size.
 
-* Promotion 2 generated approximately **$10,769 lower average weekly sales per store**
-* **p = 0.004**
-* Cohen's d = **0.706**
+### 9.1 Promotion versus market size
 
-> Statistically significant difference with a medium-to-large effect.
+- Promotion-by-market-size association test: **p = 0.8800**
 
----
+I found no evidence that market sizes were distributed differently across promotion groups. In particular, there was no detected tendency for Promotion 2 to be concentrated in smaller markets.
 
-## Promotion 1 vs Promotion 3
+### 9.2 Store age
 
-* Promotion 3 generated approximately **$2,734 lower average weekly sales per store**
-* **p = 0.6862**
-* Cohen's d = **0.169**
+- Store-age comparison across campaigns: **F = 0.4499**, **p = 0.6387**
 
-> No statistically significant difference.
+Store age also did not show a significant group difference. Neither observed characteristic explained away the main result.
 
----
+### 9.3 Two-way ANOVA
 
-## Promotion 2 vs Promotion 3
+I included market size and promotion in the same analysis.
 
-* Promotion 3 generated approximately **$8,035 higher average weekly sales per store**
-* **p = 0.037**
-* Cohen's d = **-0.519**
+| Factor | F statistic |
+|---|---:|
+| `MarketSize` | **96.13** |
+| `Promotion` | **16.03** |
 
-> Statistically significant difference with a medium effect.
+Market size was strongly related to sales, but the promotion-group difference remained after including market size. This made a simple market-composition explanation for Promotion 2's lower sales less plausible.
 
----
+It still does not rule out every unobserved store-level factor or independently establish a causal effect.
 
-# 📏 Effect Size
+![Mean sales by campaign and market size — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/segbar.png)
 
-### Eta Squared (η²)
+### 9.4 Multiple comparisons
 
-**η² = 0.0802**
+Testing many segments and hypotheses increases the chance of a statistically significant result appearing by accident. I checked two adjustments:
 
-Promotion explained approximately:
+- **Bonferroni correction**, which tightens the significance threshold based on the number of comparisons.
+- **Benjamini–Hochberg correction**, which controls the false discovery rate among rejected hypotheses.
 
-> **8% of the variance in store sales.**
+The central group-difference findings remained significant after correction in the original analysis. The **Small Market** segment had only **15 observations**, however, so I treated its segment-specific results more cautiously.
 
-Using common interpretation guidelines:
+## 10. Translating a sales gap into dollars
 
-* 0.01 → Small effect
-* 0.06 → Medium effect
-* 0.14 → Large effect
+Statistical significance is one question; financial relevance is another. To illustrate the possible scale, I applied the average weekly store-level differences across 47 stores over four weeks.
 
-The promotional effect was therefore approximately **medium in magnitude**.
+| Reference | Weekly difference per store | 47 stores × 4 weeks |
+|---|---:|---:|
+| Promotion 1 versus Promotion 2 | approx. $10,770 | **approx. $2,024,700** |
+| Promotion 3 versus Promotion 2 | approx. $8,035 | **approx. $1,510,600** |
 
-The remaining variation was likely influenced by factors such as:
+These are **scenario-based extrapolations**, not recorded losses or a measured causal increase from switching campaigns. They do not account for implementation costs, differing store responses, seasonality, or profit margins.
 
-* Market size
-* Store characteristics
-* Store age
-* Other unobserved business factors
+## 11. Main findings
 
----
+1. **Promotion 2 lagged behind both alternatives.** ANOVA, Kruskal–Wallis, and Tukey HSD support a difference, with Promotion 2 below the other two.
+2. **Promotions 1 and 3 could not be clearly separated.** Their difference was not statistically significant, which is not the same as proving that they are equal.
+3. **Market size matters a great deal.** The estimated promotion difference nevertheless remained after market-size adjustment.
+4. **The result was not reliant on one test or unusual record.** Nonparametric testing, an outlier sensitivity analysis, and multiple-comparison corrections provided additional checks.
 
-# 🔄 Sensitivity Analysis
+## 12. Business recommendation
 
-The potentially unusual observation from `LocationID = 507` was removed temporarily to evaluate its influence.
+### Reconsider Promotion 2
 
-### Before Removing the Observation
+Based on observed revenue performance, I would **pause or review Promotion 2 before continuing it unchanged**. It underperformed both alternatives, and the difference remained in the checks available here.
 
-* F = **5.8458**
-* p = **0.0037**
+### Compare cost and execution when choosing between 1 and 3
 
-### After Removing the Observation
+The revenue data did not establish a winner between Promotions 1 and 3. I would want to compare:
 
-* F = **5.7780**
-* p = **0.0039**
+- Discounts, advertising spend, and promotion execution cost
+- Labor, inventory, logistics, and operational complexity
+- New-customer acquisition, repeat purchases, and retention
+- Sales after the campaign finishes
 
-The results changed very little.
+If revenue performance is similar, the option with lower execution costs may be the better business decision.
 
-> **Conclusion: The outlier did not materially affect the statistical conclusion.**
+## 13. Limitations
 
-The original dataset was therefore retained.
+| Limitation | Why it matters |
+|---|---|
+| Only four weeks of observations | Cannot evaluate longer-term retention or novelty effects |
+| Aggregation to the store level | Resolves part of the dependence issue but discards weekly patterns |
+| No promotion or operating cost data | Cannot assess profit, ROI, or full economic return |
+| No no-promotion group | Can compare alternatives, not absolute incremental promotion lift |
+| Limited operational detail | Stockouts, closures, or other unobserved conditions could matter |
+| Incomplete allocation documentation | A passing SRM check does not prove full random assignment |
 
----
+## 14. Improvements I would make next
 
-# 🔍 Could Market Size Explain Promotion 2's Poor Performance?
+- Fit a **mixed-effects model** using weekly records and store-specific effects.
+- Collect a longer observation window to evaluate persistence.
+- Bring in campaign spend and operational costs to compare profit rather than revenue alone.
+- Link customer-level acquisition, visit frequency, and repeat purchase outcomes.
+- Estimate interactions between market characteristics and campaign type.
+- If possible, include a no-promotion arm to estimate absolute incremental lift.
 
-Promotion 2 produced the lowest average sales.
+## 15. Tools and methods
 
-The next question was whether this result could be explained by biased assignment across different market sizes.
+- **Data analysis:** Python, pandas, NumPy, SciPy, statsmodels
+- **Visualization:** Matplotlib, Seaborn
+- **Testing:** SRM, Shapiro–Wilk, Levene, one-way/two-way ANOVA, Kruskal–Wallis, Tukey HSD, Cohen's d, eta squared, Bonferroni, Benjamini–Hochberg
+- **Workflow:** Data validation, experimental-unit selection, exploratory analysis, outlier assessment, confounding checks, sensitivity analysis, business interpretation
 
----
+## 16. My work
 
-## Promotion × Market Size
+I defined the comparison, validated the experimental structure, checked assignment ratios and unusual observations, selected the store-level analysis unit, ran assumption checks and statistical tests, evaluated effect sizes and potential confounders, tested robustness, and developed the business recommendation.
 
-A statistical test was conducted to evaluate whether promotion assignment was associated with market size.
-
-### Result
-
-**p = 0.8800**
-
-> Promotion assignment and market size appeared statistically independent.
-
-This suggests that Promotion 2 was not disproportionately assigned to weaker or smaller markets.
-
----
-
-## Promotion × Store Age
-
-Store age was also compared across promotional groups.
-
-### Result
-
-* **F = 0.4499**
-* **p = 0.6387**
-
-There was no statistically significant difference in store age across promotions.
-
----
-
-# 🧮 Two-Way ANOVA
-
-A two-way ANOVA was performed to evaluate the promotion effect while accounting for market size.
-
-### Key Results
-
-* **Market Size: F = 96.13**
-* **Promotion: F = 16.03**
-
-Market size had a very strong relationship with sales.
-
-However, the promotional effect remained statistically meaningful after accounting for market size.
-
-> **Conclusion: Market size influenced sales strongly, but it did not explain the poor performance of Promotion 2.**
-
-The evidence suggests that Promotion 2's weaker performance was primarily associated with the promotion itself rather than biased market allocation.
-
----
-
-# ⚠️ Multiple Testing Robustness Check
-
-Additional analyses were conducted to determine whether the observed findings could be explained by false positives caused by multiple statistical comparisons.
-
-Both methods were used:
-
-* **Bonferroni correction**
-* **Benjamini-Hochberg correction**
-
-The results remained statistically significant after correction.
-
-This provides additional confidence that the findings were not simply the result of multiple-testing error.
-
-### Note
-
-The Small Market segment contained only **15 observations**, so conclusions for this segment should be interpreted more cautiously.
-
----
-
-# 💰 Estimated Revenue Impact of Promotion 2
-
-The difference in average sales was translated into estimated business impact.
-
-## Compared with Promotion 1
-
-* Average weekly difference per store: **approximately $10,770**
-* Estimated impact across 47 stores over 4 weeks:
-
-> **≈ $2,024,700 in lower sales**
-
----
-
-## Compared with Promotion 3
-
-* Average weekly difference per store: **approximately $8,035**
-* Estimated impact across 47 stores over 4 weeks:
-
-> **≈ $1,510,600 in lower sales**
-
-These estimates demonstrate that the statistical differences may also be economically meaningful.
-
----
-
-# 💡 Key Findings
-
-### 🥇 Promotion 2 performed the worst
-
-Promotion 2 generated significantly lower sales compared with both Promotion 1 and Promotion 3.
-
-### 📊 Promotion 1 and Promotion 3 were not significantly different
-
-The overall comparison found:
-
-> **p = 0.6862**
-
-Therefore, the available sales data does not provide strong evidence that one is superior to the other.
-
-### 🏪 Market Size strongly influenced sales
-
-Market size explained substantial variation in sales.
-
-However, the promotion effect remained meaningful after controlling for market size.
-
-### 🔄 Results were robust
-
-The main conclusion remained consistent across:
-
-* ANOVA
-* Kruskal-Wallis
-* Tukey's HSD
-* Sensitivity analysis
-* Market size controls
-* Multiple-testing corrections
-
----
-
-# ✅ Business Recommendation
-
-## 🚫 Do Not Continue Promotion 2
-
-Promotion 2 should be paused or reconsidered.
-
-The analysis found:
-
-* Statistically significant underperformance
-* Meaningful effect sizes
-* No evidence that market size caused the difference
-* Consistent results across market segments
-* Robustness to potential outliers
-* Estimated revenue losses large enough to be economically meaningful
-
----
-
-## 🤔 Choosing Between Promotion 1 and Promotion 3
-
-Promotion 1 and Promotion 3 did not show a statistically significant difference in sales.
-
-Therefore, the final decision should consider additional factors not available in the dataset, including:
-
-* Promotion implementation cost
-* Marketing cost
-* Operational complexity
-* Inventory requirements
-* Logistics burden
-* Customer retention
-* Long-term sales performance
-
----
-
-# ⚠️ Limitations
-
-This analysis has several limitations.
-
-### Short Observation Period
-
-The experiment lasted only four weeks.
-
-Long-term effects could not be evaluated.
-
----
-
-### Weekly Information Was Aggregated
-
-Sales were averaged at the store level to address within-store dependence.
-
-This improved the independence of observations but reduced information about weekly variation.
-
----
-
-### Missing Cost Information
-
-The dataset contains sales but does not include:
-
-* Promotion costs
-* Labor costs
-* Marketing expenses
-* Operational costs
-
-Therefore, this analysis evaluates **revenue performance**, not full profitability.
-
----
-
-### Potential Novelty Effects
-
-The short observation period makes it difficult to determine whether the observed effects would persist after the initial novelty of the promotion fades.
-
-Future analysis should examine longer-term sales trends.
-
----
-
-# 🚀 Future Improvements
-
-Future versions of this analysis could include:
-
-* Mixed-effects models to explicitly account for repeated weekly observations
-* Longer observation periods
-* Profit and cost data
-* Customer-level behavioral analysis
-* Customer retention metrics
-* Long-term promotion effects
-* Interaction effects between promotion and market characteristics
-
----
-
-# 🛠 Tools & Skills
-
-### Programming & Data Analysis
-
-* Python
-* Pandas
-* NumPy
-
-### Statistics & Experimentation
-
-* Hypothesis Testing
-* A/B Testing
-* One-Way ANOVA
-* Kruskal-Wallis Test
-* Tukey's HSD
-* Levene's Test
-* Shapiro-Wilk Test
-* Effect Size Analysis
-* Multiple Testing Correction
-
-### Analytical Methods
-
-* Exploratory Data Analysis (EDA)
-* Outlier Analysis
-* Sensitivity Analysis
-* Confounding Variable Analysis
-* Two-Way ANOVA
-
-### Data Visualization
-
-* Matplotlib
-* Seaborn
-
----
-
-# 👤 My Contribution
-
-* Defining the business question
-* Validating the experimental dataset
-* Checking assignment consistency and SRM
-* Identifying potential outliers
-* Evaluating statistical assumptions
-* Selecting appropriate statistical methods
-* Conducting ANOVA and non-parametric robustness checks
-* Performing post-hoc comparisons
-* Investigating potential confounding variables
-* Conducting sensitivity and multiple-testing analyses
-* Translating statistical results into estimated business impact
-* Developing the final business recommendation
-
----
-
-# 📌 Final Conclusion
-
-> **Promotion 2 consistently underperformed the other promotional strategies and produced statistically significant and economically meaningful lower sales.**
-
-Promotion 1 and Promotion 3 showed no statistically significant difference in average sales.
-
-Based on the available evidence:
-
-### 🚫 Pause Promotion 2
-
-### ✅ Select between Promotion 1 and Promotion 3 based on operational cost, implementation complexity, and long-term business considerations.
+**Bottom line:** Promotion 2 consistently showed lower sales. The decision between Promotions 1 and 3 should be based on cost, operational considerations, and longer-term customer outcomes that were not available in this dataset.
