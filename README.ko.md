@@ -324,6 +324,7 @@ Promotion 2의 평균이 낮더라도 해당 그룹에 소규모 상권이나 �
 
 ```
 pip install -r requirements.txt
+pip install jupyter
 ```
 
 버전은 노트북을 실행한 Python 3.11 환경 기준으로 고정했다.
