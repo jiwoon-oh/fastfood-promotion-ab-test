@@ -1,0 +1,3 @@
+reference,weekly_diff_per_store_thousands,n_promotion2_stores,weekly_total_thousands,weeks,four_week_total_thousands,kind
+vs Promotion 1,10.7696,47,506.1712,4,2024.6848,scenario estimate (Tukey differences applied to 47 stores; not a measured loss)
+vs Promotion 3,8.0351,47,377.6497,4,1510.5988,scenario estimate (Tukey differences applied to 47 stores; not a measured loss)

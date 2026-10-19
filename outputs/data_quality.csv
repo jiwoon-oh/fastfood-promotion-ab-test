@@ -1,0 +1,2 @@
+n_rows,n_columns,n_stores,weeks_per_store_min,weeks_per_store_max,n_promotions,n_missing_cells,n_duplicate_rows,n_duplicate_store_weeks,n_stores_with_several_promotions,n_stores_in_several_markets
+548,7,137,4,4,3,0,0,0,0,0

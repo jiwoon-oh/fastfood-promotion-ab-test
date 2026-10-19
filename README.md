@@ -10,6 +10,8 @@ Promotion 2 had the lowest average sales. That was easy to see, but it was not y
 
 **Promotion 2 had lower sales than both Promotion 1 and Promotion 3. I could not establish a statistically significant difference between Promotions 1 and 3.** Importantly, there was no no-promotion control group. The findings compare the three campaigns with each other; they do not establish how much additional revenue any campaign generated compared with doing nothing.
 
+**Analysis unit.** The main analysis unit is the **store average**: one four-week mean sales value for each of the 137 stores. The 548 weekly rows are used only for exploration, outlier checks and the week-effect check, because the four weeks of one store are not independent observations.
+
 ## 1. Questions
 
 1. Do mean store-level sales differ across the three promotions?
@@ -84,6 +86,8 @@ One weekly observation was unusually low relative to other stores. I considered 
 
 I kept the record in the initial analysis rather than removing it automatically. A flagged outlier is a reason to investigate, not by itself a reason to discard data.
 
+![Weekly sales of store 507 were 38.65, 17.34, 33.14 and 23.44 thousand dollars in weeks 1 to 4, against four-week averages of 29.5 to 43.3 for the other 14 stores in market 6](images/outlier507.png)
+
 ## 5. Why I used 137 stores instead of 548 rows
 
 Every store appears four times in the raw data. Weekly sales from one store are likely related: a store that sells more than others in Week 1 will often remain relatively strong in Week 2. Treating all 548 observations as independent would overstate the amount of independent information available.
@@ -99,7 +103,7 @@ There were two reasonable approaches:
 
 I checked whether there was a common week effect before aggregating the observations.
 
-- Week-effect test: `p = 0.9935`
+- Week-effect test: `p = 0.9935` (a reference analysis on the 548 weekly rows that treats repeated weeks of the same store as independent)
 - Between-store variation was about **3.4 times** within-store weekly variation.
 
 There was no detected common week effect across the four weeks, while persistent differences between stores were much larger. I chose the **four-week average sales per store** as the main outcome, leaving 137 store-level observations.
@@ -110,7 +114,7 @@ This was a practical choice for the question at hand, not a claim that aggregati
 
 The combined distribution looked somewhat bimodal. The grouping of markets and campaigns appeared to explain part of that shape, and larger markets contributed several high-sales observations.
 
-![Distribution of average weekly sales by promotion — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/box.png)
+![Box plots of the 137 store four-week averages by promotion; the means are 58.1, 47.3 and 55.4 thousand dollars for Promotions 1, 2 and 3](images/box.png)
 
 The chart suggested that Promotion 2 performed less well. I still needed to check whether that apparent difference could reasonably be attributed to sampling variation.
 
@@ -127,6 +131,8 @@ The chart suggested that Promotion 2 performed less well. I still needed to chec
 The Q–Q plots showed similar patterns across the campaigns, but their upper tails departed from the theoretical normal distribution. Shapiro–Wilk tests also indicated departures from normality.
 
 I used one-way ANOVA for a comparison of means and added Kruskal–Wallis as a nonparametric check. This way, the conclusion would not rely on a single set of distributional assumptions.
+
+![Q–Q plots of the store-level four-week average sales for the three promotions; Shapiro–Wilk p = 0.0002, <0.0001 and 0.0001, with the upper tail above the normal line](images/qq.png)
 
 ### 7.2 Equal variances: Levene's test
 
@@ -157,13 +163,13 @@ This test also found differences among the groups. Strictly speaking, Kruskal–
 
 | Comparison | Mean weekly difference per store | p-value | Cohen's d | Interpretation |
 |---|---:|---:|---:|---|
-| Promotion 1 − 2 | approx. **+$10,769** | **0.004** | **0.706** | Significant; medium-to-large gap |
-| Promotion 1 − 3 | approx. **+$2,734** | 0.6862 | 0.169 | No detected significant difference |
+| Promotion 1 − 2 | approx. **+$10,770** | **0.004** | **0.706** | Significant; medium-to-large gap |
+| Promotion 1 − 3 | approx. **+$2,735** | 0.6862 | 0.169 | No detected significant difference |
 | Promotion 3 − 2 | approx. **+$8,035** | **0.037** | **0.519** (absolute value) | Significant; medium-sized gap |
 
 With the opposite comparison order, the original Cohen's d for Promotion 2 versus 3 is reported as `−0.519`. The table uses the absolute magnitude for readability.
 
-![Tukey pairwise differences and confidence intervals — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/tukey.png)
+![Tukey HSD 95% intervals before market-size adjustment: Promotion 1 minus 2 is +10.77 [2.94, 18.60], Promotion 3 minus 2 is +8.04 [0.39, 15.68], Promotion 1 minus 3 is +2.73 [−5.09, 10.56]](images/tukey.png)
 
 Promotion 2 had significantly lower sales than either alternative. Promotion 1 versus 3 was not statistically significant, but **lack of significance is not proof of equivalence**. The data were not strong enough to establish which of those two performs better.
 
@@ -201,20 +207,32 @@ I found no evidence that market sizes were distributed differently across promot
 
 Store age also did not show a significant group difference. Neither observed characteristic explained away the main result.
 
-### 9.3 Two-way ANOVA
+### 9.3 Market-size-adjusted analysis
 
-I included market size and promotion in the same analysis.
+The analysis unit is the same 137 store averages as in section 7. Before running the models I fixed how I would read them: if the interaction between promotion and market size was not significant, I would interpret the main-effects model, and a pairwise difference would count as separated only if its 95% interval, adjusted for the three comparisons, excluded zero.
 
-| Factor | F statistic |
-|---|---:|
-| `MarketSize` | **96.13** |
-| `Promotion` | **16.03** |
+| Term (Type II ANOVA) | F | p | Partial η² |
+|---|---:|---:|---:|
+| `Promotion` | **16.04** | 5.8e−07 | 0.195 |
+| `MarketSize` | **96.13** | 1.7e−26 | 0.593 |
 
-Market size was strongly related to sales, but the promotion-group difference remained after including market size. This made a simple market-composition explanation for Promotion 2's lower sales less plausible.
+The `Promotion × MarketSize` interaction had F = 1.32 and **p = 0.2659**. It was not significant, so I interpreted the main-effects model. The Small market has only 15 stores (5, 4 and 6 per promotion), so the power to detect an interaction is low.
 
-It still does not rule out every unobserved store-level factor or independently establish a causal effect.
+![Mean weekly sales per store with 95% intervals, raw and adjusted for market size: 58.1 and 61.1 for Promotion 1, 47.3 and 50.3 for Promotion 2, 55.4 and 60.0 for Promotion 3 (thousand dollars)](images/promo-means-ci.png)
 
-![Mean sales by campaign and market size — existing Korean chart](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/assets/segbar.png)
+Adjusted means average the three market sizes with equal weight: 61.06, 50.29 and 60.05 thousand dollars for Promotions 1, 2 and 3, against raw means of 58.10, 47.33 and 55.36.
+
+| Comparison | Before: Tukey difference [95% CI] | After: market-size-adjusted difference [Tukey–Kramer 95% CI] |
+|---|---|---|
+| Promotion 1 − 2 | +$10.77K [2.94, 18.60] | +$10.77K [5.73, 15.80] |
+| Promotion 3 − 2 | +$8.04K [0.39, 15.68] | +$9.75K [4.82, 14.69] |
+| Promotion 1 − 3 | +$2.73K [−5.09, 10.56] | +$1.02K [−4.03, 6.06] |
+
+![95% intervals for pairwise differences before and after market-size adjustment: 1 minus 2 is +10.77 then +10.77, 3 minus 2 is +8.04 then +9.75, 1 minus 3 is +2.73 then +1.02; after adjustment only the 1 minus 3 interval includes zero](images/adjusted-diff.png)
+
+After adjusting for market size, Promotion 2 was still lower than both Promotion 1 and Promotion 3. Promotions 1 and 3 could still not be separated; their interval includes zero, which does not show that they are equal. Adjusting for the observed market size does not control unobserved store characteristics, so it does not establish a causal effect.
+
+![Mean store sales by promotion and market size in thousand dollars: Small 60.2, 50.8, 59.5; Medium 47.7, 39.1, 45.5; Large 75.2, 60.3, 77.2; Promotion 2 is lowest in every market size](images/segbar.png)
 
 ### 9.4 Multiple comparisons
 
@@ -223,7 +241,7 @@ Testing many segments and hypotheses increases the chance of a statistically sig
 - **Bonferroni correction**, which tightens the significance threshold based on the number of comparisons.
 - **Benjamini–Hochberg correction**, which controls the false discovery rate among rejected hypotheses.
 
-The central group-difference findings remained significant after correction in the original analysis. The **Small Market** segment had only **15 observations**, however, so I treated its segment-specific results more cautiously.
+The central group-difference findings remained significant after correction in the original analysis. The **Small Market** segment had only **15 stores**, however, so I treated its segment-specific results more cautiously.
 
 ## 10. Translating a sales gap into dollars
 
@@ -234,13 +252,15 @@ Statistical significance is one question; financial relevance is another. To ill
 | Promotion 1 versus Promotion 2 | approx. $10,770 | **approx. $2,024,700** |
 | Promotion 3 versus Promotion 2 | approx. $8,035 | **approx. $1,510,600** |
 
-These are **scenario-based extrapolations**, not recorded losses or a measured causal increase from switching campaigns. They do not account for implementation costs, differing store responses, seasonality, or profit margins.
+The amounts are computed in `promotion_ab_test.ipynb` and saved in `outputs/business_scenario.csv`. They are **scenario estimates** based on the Tukey differences before market-size adjustment, not recorded losses or a measured causal increase from switching campaigns. They do not account for implementation costs, differing store responses, seasonality, or profit margins.
+
+![Scenario estimate, not a measured loss: the Tukey differences applied to the 47 Promotion 2 stores for four weeks amount to $2,025K against Promotion 1 and $1,511K against Promotion 3](images/business-impact.png)
 
 ## 11. Main findings
 
 1. **Promotion 2 lagged behind both alternatives.** ANOVA, Kruskal–Wallis, and Tukey HSD support a difference, with Promotion 2 below the other two.
 2. **Promotions 1 and 3 could not be clearly separated.** Their difference was not statistically significant, which is not the same as proving that they are equal.
-3. **Market size matters a great deal.** The estimated promotion difference nevertheless remained after market-size adjustment.
+3. **Market size matters a great deal.** The estimated promotion difference nevertheless remained after market-size adjustment (interaction p = 0.2659).
 4. **The result was not reliant on one test or unusual record.** Nonparametric testing, an outlier sensitivity analysis, and multiple-comparison corrections provided additional checks.
 
 ## 12. Business recommendation
