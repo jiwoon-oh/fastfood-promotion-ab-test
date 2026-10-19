@@ -319,3 +319,20 @@ Promotion 2의 평균이 낮더라도 해당 그룹에 소규모 상권이나 �
 프로젝트의 분석 질문 정의, 데이터 구조·품질 검증, SRM 점검, 특이 관측치 탐색, 반복 측정 처리 방침, 통계 검정과 효과 크기 계산, 매장 특성 비교, 추가 검정 및 해석, 운영 제안까지 진행했다.
 
 **정리:** Promotion 2의 낮은 매출은 여러 분석에서 일관되게 관찰됐다. 다만 이 결과는 매출 기준의 비교다. 실제 캠페인을 선택할 때는 Promotion 1과 3의 비용·운영 난이도·장기 고객 효과를 추가로 확인해야 한다.
+
+## 실행 방법
+
+```
+pip install -r requirements.txt
+```
+
+버전은 노트북을 실행한 Python 3.11 환경 기준으로 고정했다.
+
+1. `WA_Marketing-Campaign.csv`를 `data/`에 내려받는다(`data/README.md` 참고). git에는 올라가지 않는다.
+2. 저장소 루트에서 `promotion_ab_test`, `ab_figures` 순서로 노트북을 실행한다. 경로와 `SEED = 42`는 `config.py`에서 정한다.
+
+   ```
+   python -m nbconvert --to notebook --execute --inplace <notebook>.ipynb
+   ```
+
+   `promotion_ab_test`가 결과 CSV를 `outputs/`에 쓰고, `ab_figures`가 그 CSV로 `images/`의 그림을 그린다(`TRANSPARENT = True`로 바꾸면 투명 배경 버전).

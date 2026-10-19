@@ -312,3 +312,20 @@ If revenue performance is similar, the option with lower execution costs may be 
 I defined the comparison, validated the experimental structure, checked assignment ratios and unusual observations, selected the store-level analysis unit, ran assumption checks and statistical tests, evaluated effect sizes and potential confounders, tested robustness, and developed the business recommendation.
 
 **Bottom line:** Promotion 2 consistently showed lower sales. The decision between Promotions 1 and 3 should be based on cost, operational considerations, and longer-term customer outcomes that were not available in this dataset.
+
+## How to run
+
+```
+pip install -r requirements.txt
+```
+
+The pinned versions are those of the Python 3.11 environment the notebooks were run in.
+
+1. Download `WA_Marketing-Campaign.csv` into `data/` (see `data/README.md`). It is git-ignored.
+2. Run the notebooks from the repository root: `promotion_ab_test`, then `ab_figures`. `config.py` sets all paths and `SEED = 42`.
+
+   ```
+   python -m nbconvert --to notebook --execute --inplace <notebook>.ipynb
+   ```
+
+   `promotion_ab_test` writes the result CSVs to `outputs/`; `ab_figures` draws the figures in `images/` from those CSVs (set `TRANSPARENT = True` for transparent versions).
