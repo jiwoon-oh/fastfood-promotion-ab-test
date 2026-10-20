@@ -2,6 +2,8 @@
 
 [English](README.md) · [포트폴리오 페이지](https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/) · [원본 데이터(Kaggle)](https://www.kaggle.com/datasets/chebotinaa/fast-food-marketing-campaign-ab-test)
 
+**데이터:** Kaggle Fast Food Marketing Campaign A/B Test — 137개 매장의 주간 매출 548건(매장당 4주, 프로모션 3개). 주 분석 단위는 매장 평균.
+
 ## 프로젝트 소개
 
 한 패스트푸드 체인이 신메뉴 출시를 앞두고 세 가지 프로모션을 여러 매장에 나누어 적용했다. 각 매장의 4주간 매출 기록을 가지고, 프로모션 간 매출 차이가 우연인지 확인하고 어떤 안을 계속 운영할지 판단하는 것이 목표였다.
