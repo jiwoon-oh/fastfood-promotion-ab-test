@@ -2,6 +2,8 @@
 
 [한국어](README.ko.md) · [Kaggle dataset](https://www.kaggle.com/datasets/chebotinaa/fast-food-marketing-campaign-ab-test)
 
+Full case study: https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/
+
 **Data:** Fast Food Marketing Campaign A/B Test (Kaggle) — 548 weekly sales observations from 137 stores (4 weeks each, 3 promotions). Primary analysis unit: the store average.
 
 ## Project background
