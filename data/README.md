@@ -11,4 +11,4 @@ The analysis uses one file, `WA_Marketing-Campaign.csv`. It is git-ignored, so d
 
 Columns: `MarketID`, `MarketSize` (Small, Medium, Large), `LocationID`, `AgeOfStore`, `Promotion` (1, 2, 3), `week` (1–4), `SalesInThousands`.
 
-The dataset has 137 stores observed for four weeks each. Please check the dataset page for its license and terms before reuse.
+The dataset has 137 stores observed for four weeks each. `SalesInThousands` is the weekly sales of the new menu item, not total store sales. The dataset's scenario text matches IBM's description of the SPSS sample file `testmarket.sav`, which IBM labels hypothetical; I could not confirm that the two files are identical, so the data are treated as hypothetical sample data. Please check the dataset page for its license and terms before reuse.

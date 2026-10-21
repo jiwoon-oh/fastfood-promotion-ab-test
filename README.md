@@ -4,11 +4,11 @@
 
 Full case study: https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/
 
-**Data:** Fast Food Marketing Campaign A/B Test (Kaggle). 548 weekly sales observations from 137 stores (4 weeks each, 3 promotions). Primary analysis unit: the store average.
+**Data:** Fast Food Marketing Campaign A/B Test (Kaggle), treated here as hypothetical sample data. 548 weekly new-item sales observations from 137 stores (4 weeks each, 3 promotions). Primary analysis unit: the store average.
 
 ## Project background
 
-According to the dataset description, a fast-food chain tested three promotions while preparing to introduce a new menu item. Each store appears under a single promotion in the data, and sales were recorded for four weeks. My goal was to compare the three options and decide which campaign the chain should consider keeping.
+The dataset description sets up a scenario in which a fast-food chain plans to add a new menu item and compares three possible promotions. The description does not say the data are real, and IBM's documentation labels the closely matching SPSS sample file `testmarket.sav` as hypothetical. Each store appears under a single promotion in the data, and weekly sales of the new item were recorded for four weeks. My goal was to compare the three options and decide which campaign the chain should consider keeping in this scenario.
 
 Promotion 2 had the lowest average sales, but that alone was not a sound basis for a recommendation. The stores were in markets of different sizes, and four weekly observations from the same store are not four independent observations. I therefore started with the data structure, checked statistical assumptions, and tested whether the main result held under several alternative analyses.
 
@@ -23,13 +23,13 @@ Promotion 2 had the lowest average sales, but that alone was not a sound basis f
 3. Could market size, store age, or unusual sales observations explain the difference?
 4. Does the answer survive alternative statistical tests and sensitivity checks?
 
-The business decision concerns revenue performance. Profitability requires cost information that is not in this dataset.
+The business decision concerns revenue performance (weekly sales of the new menu item, not total store sales). Profitability requires cost information that is not in this dataset.
 
 ## 2. Data
 
 ### Source and structure
 
-I used Kaggle's *Fast Food Marketing Campaign A/B Test* dataset for a portfolio analysis. The original data does not let me independently verify every detail of the campaign allocation process or calculate campaign costs.
+I used Kaggle's *Fast Food Marketing Campaign A/B Test* dataset (credited there to the IBM Watson Analytics community) for a portfolio analysis. Its scenario text matches IBM's description of the SPSS sample file `testmarket.sav`, which IBM calls hypothetical. I could not confirm that the two files are identical, so I treat the data as hypothetical sample data, not as real company results. IBM's description documents random selection of markets, not random assignment of promotions. The data do not let me verify how promotions were assigned or calculate campaign costs.
 
 | Item | Count |
 |---|---:|
@@ -45,8 +45,8 @@ I used Kaggle's *Fast Food Marketing Campaign A/B Test* dataset for a portfolio 
 | `LocationID` | Store identifier |
 | `MarketSize` | Small, Medium, or Large market |
 | `Promotion` | Campaign recorded for the store (1, 2, or 3) |
-| `Week` | Observation week |
-| `SalesInThousands` | Weekly sales, in thousands of USD |
+| `week` | Observation week |
+| `SalesInThousands` | Weekly sales of the new menu item, in thousands of USD |
 | `AgeOfStore` | Age of the store |
 
 Although promotions were recorded as numbers, I treated them as categories rather than an ordered numerical variable.
@@ -68,13 +68,13 @@ These checks did not reveal missing records or conflicting assignment data withi
 
 ## 3. Sample Ratio Mismatch (SRM)
 
-An unusually uneven allocation of stores could point to a problem with how promotions were assigned. I checked sample ratio mismatch at the **store level**, not at the row level, because each store appears under a single promotion in the data. How the assignment was made is not documented.
+An unusually uneven allocation of stores could point to a problem with how promotions were assigned. I checked sample ratio mismatch at the **store level**, not at the row level, because each store appears under a single promotion in the data. The source documents random selection of markets, not random assignment of promotions, so how the promotions were assigned is not documented.
 
 - Units checked: **137 stores**
 - Chi-square allocation check: **p = 0.8898**
 - Significance threshold: `α = 0.05`
 
-I found no evidence of an allocation-ratio mismatch under the assumed equal-allocation design. This is a useful check, but it does not prove that the campaign assignment was randomized correctly in every respect.
+I found no evidence of an allocation-ratio mismatch under the assumed equal-allocation design. This is a useful check, but it does not show that promotions were randomly assigned: the source documents random selection of markets, not random assignment of promotions.
 
 ## 4. Outlier review
 
@@ -165,7 +165,7 @@ This test also found differences among the groups. Strictly speaking, Kruskal–
 
 ### 7.5 Tukey HSD: locating the differences
 
-| Comparison | Mean weekly difference per store | Tukey-adjusted p-value | Cohen's d | Interpretation |
+| Comparison | Mean weekly new-item sales difference per store | Tukey-adjusted p-value | Cohen's d | Interpretation |
 |---|---:|---:|---:|---|
 | Promotion 1 − 2 | approx. **+$10,770** | **0.004** | **0.706** | Significant; medium-to-large gap |
 | Promotion 1 − 3 | approx. **+$2,735** | 0.6862 | 0.169 | No detected significant difference |
@@ -255,7 +255,7 @@ All three segment tests stayed below 0.05 under both corrections. These are thre
 
 ## 10. Scenario estimate of the revenue gap
 
-Statistical significance and the size of the gap in dollars are separate questions. To illustrate the possible scale of the observed difference, I applied the average weekly store-level differences to 47 stores over four weeks as a scenario.
+Statistical significance and the size of the gap in dollars are separate questions. To illustrate the possible scale of the observed difference, I applied the average weekly store-level differences in new-item sales to 47 stores over four weeks as a scenario. Because the data are hypothetical sample data, this is an illustration of the method, not a real revenue estimate.
 
 | Reference | Weekly difference per store | 47 stores × 4 weeks |
 |---|---:|---:|
@@ -277,7 +277,7 @@ The amounts are computed in `promotion_ab_test.ipynb` and saved in `outputs/busi
 
 ### Reconsider Promotion 2
 
-Based on observed revenue performance, I would **pause or review Promotion 2 before continuing it unchanged**. It underperformed both alternatives, and the difference remained in the checks available here.
+In this hypothetical scenario, the observed new-item sales would argue for **pausing or reviewing Promotion 2 before continuing it unchanged**. It underperformed both alternatives, and the difference remained in the checks available here.
 
 ### Compare cost and execution when choosing between 1 and 3
 
@@ -299,7 +299,8 @@ If revenue performance is similar, the option with lower execution costs may be 
 | No promotion or operating cost data | Cannot assess profit, ROI, or full economic return |
 | No no-promotion group | Can compare alternatives, not absolute incremental promotion lift |
 | Limited operational detail | Stockouts, closures, or other unobserved conditions could matter |
-| Incomplete allocation documentation | The assignment procedure is not documented, and a passing SRM check does not prove random assignment |
+| Incomplete allocation documentation | The source documents random selection of markets, not random assignment of promotions; the assignment procedure is not documented, and a passing SRM check does not prove random assignment |
+| Hypothetical sample data | IBM labels the matching SPSS sample file as hypothetical; findings illustrate the method and are not evidence about real campaigns |
 
 ## 14. Improvements I would make next
 
