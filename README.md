@@ -4,11 +4,11 @@
 
 Full case study: https://jiwoon-oh.github.io/portfolio/projects/ab-test-fastfood/
 
-**Data:** Fast Food Marketing Campaign A/B Test (Kaggle) — 548 weekly sales observations from 137 stores (4 weeks each, 3 promotions). Primary analysis unit: the store average.
+**Data:** Fast Food Marketing Campaign A/B Test (Kaggle). 548 weekly sales observations from 137 stores (4 weeks each, 3 promotions). Primary analysis unit: the store average.
 
 ## Project background
 
-A fast-food chain tested three promotions while preparing to introduce a new menu item. Each participating store received one promotion, and sales were recorded for four weeks. My goal was to compare the three options and decide which campaign the chain should consider keeping.
+According to the dataset description, a fast-food chain tested three promotions while preparing to introduce a new menu item. Each store appears under a single promotion in the data, and sales were recorded for four weeks. My goal was to compare the three options and decide which campaign the chain should consider keeping.
 
 Promotion 2 had the lowest average sales, but that alone was not a sound basis for a recommendation. The stores were in markets of different sizes, and four weekly observations from the same store are not four independent observations. I therefore started with the data structure, checked statistical assumptions, and tested whether the main result held under several alternative analyses.
 
@@ -44,7 +44,7 @@ I used Kaggle's *Fast Food Marketing Campaign A/B Test* dataset for a portfolio 
 | `MarketID` | Identifier for the market containing the store |
 | `LocationID` | Store identifier |
 | `MarketSize` | Small, Medium, or Large market |
-| `Promotion` | Campaign assigned to the store (1, 2, or 3) |
+| `Promotion` | Campaign recorded for the store (1, 2, or 3) |
 | `Week` | Observation week |
 | `SalesInThousands` | Weekly sales, in thousands of USD |
 | `AgeOfStore` | Age of the store |
@@ -53,24 +53,24 @@ Although promotions were recorded as numbers, I treated them as categories rathe
 
 ### Data-quality checks
 
-Before running tests, I checked the structure of the data and the consistency of the promotion assignment.
+Before running tests, I checked the structure of the data and the consistency of the promotion records.
 
 | Check | Result |
 |---|---|
 | Missing values | None |
 | Duplicate rows | None |
 | Duplicate store-week combinations | None |
-| Stores assigned to more than one promotion | None |
-| Stores assigned to more than one market | None |
+| Stores listed under more than one promotion | None |
+| Stores listed under more than one market | None |
 | Stores with fewer or more than four weekly records | None |
 
 These checks did not reveal missing records or conflicting assignment data within the dataset.
 
 ## 3. Sample Ratio Mismatch (SRM)
 
-An unusually uneven allocation of stores could point to a problem with how promotions were assigned. I checked sample ratio mismatch at the **store level**, not at the row level, because assignment was made once for each store.
+An unusually uneven allocation of stores could point to a problem with how promotions were assigned. I checked sample ratio mismatch at the **store level**, not at the row level, because each store appears under a single promotion in the data. How the assignment was made is not documented.
 
-- Experimental units checked: **137 stores**
+- Units checked: **137 stores**
 - Chi-square allocation check: **p = 0.8898**
 - Significance threshold: `α = 0.05`
 
@@ -100,7 +100,7 @@ There were two reasonable approaches:
 
 | Approach | Benefit | Trade-off |
 |---|---|---|
-| Average the four weeks for each store | One observation per store (the assignment unit); clear comparison of store averages | Loses week-to-week detail |
+| Average the four weeks for each store | One observation per store (each store carries one promotion); clear comparison of store averages | Loses week-to-week detail |
 | Repeated-measures ANOVA or a mixed-effects model | Retains weekly records and accounts for within-store dependence | More demanding model specification and interpretation |
 
 ### Week effect and between-store variation
@@ -110,7 +110,7 @@ I checked whether there was a common week effect before aggregating the observat
 - Week-effect test: `p = 0.9935` (a reference analysis on the 548 weekly rows that treats repeated weeks of the same store as independent)
 - Between-store variation was about **3.4 times** within-store weekly variation.
 
-There was no detected common week effect across the four weeks, while persistent differences between stores were much larger. I chose the **four-week average sales per store** as the main outcome, leaving 137 store-level observations.
+There was no detected common week effect across the four weeks, while persistent differences between stores were much larger. I chose the **four-week average sales per store** as the main outcome, leaving 137 store-level observations. Independence between stores, including stores in the same market, is assumed and was not verified.
 
 This was a practical choice for the question at hand, not a claim that aggregation is always preferable. A mixed-effects model would be a useful extension if weekly dynamics were the main focus.
 
@@ -165,7 +165,7 @@ This test also found differences among the groups. Strictly speaking, Kruskal–
 
 ### 7.5 Tukey HSD: locating the differences
 
-| Comparison | Mean weekly difference per store | p-value | Cohen's d | Interpretation |
+| Comparison | Mean weekly difference per store | Tukey-adjusted p-value | Cohen's d | Interpretation |
 |---|---:|---:|---:|---|
 | Promotion 1 − 2 | approx. **+$10,770** | **0.004** | **0.706** | Significant; medium-to-large gap |
 | Promotion 1 − 3 | approx. **+$2,735** | 0.6862 | 0.169 | No detected significant difference |
@@ -209,7 +209,7 @@ I found no evidence that market sizes were distributed differently across promot
 
 - Store-age comparison across campaigns: **F = 0.4499**, **p = 0.6387**
 
-Store age also did not show a significant group difference. Neither observed characteristic accounted for the main result.
+Store age also did not show a significant group difference. Neither observed characteristic showed an imbalance across the promotion groups.
 
 ### 9.3 Market-size-adjusted analysis
 
@@ -240,12 +240,18 @@ After adjusting for market size, Promotion 2 was still lower than both Promotion
 
 ### 9.4 Multiple comparisons
 
-Testing many segments and hypotheses increases the chance of a statistically significant result appearing by accident. I checked two adjustments:
+The segment-level analysis runs three separate tests: a one-way ANOVA of Promotion within each market size (Small, n = 15 stores; Medium, n = 80; Large, n = 42). Running several tests increases the chance of a statistically significant result appearing by accident, so I applied two adjustments to these three p-values:
 
-- **Bonferroni correction**, which tightens the significance threshold based on the number of comparisons.
+- **Bonferroni correction**, which tightens the significance threshold based on the number of tests.
 - **Benjamini–Hochberg correction**, which controls the false discovery rate among rejected hypotheses.
 
-The central group-difference findings remained significant after correction in the original analysis. The **Small Market** segment had only **15 stores**, however, so I treated its segment-specific results more cautiously.
+| Segment | Raw p | Bonferroni p | Benjamini–Hochberg p |
+|---|---:|---:|---:|
+| Small | 0.003183 | 0.009550 | 0.004775 |
+| Medium | 0.000104 | 0.000313 | 0.000313 |
+| Large | 0.007732 | 0.023195 | 0.007732 |
+
+All three segment tests stayed below 0.05 under both corrections. These are three-group ANOVAs within each segment; pairwise differences within segments were not tested, and the per-segment means (Promotion 2 lowest in all three) are descriptive. No other correction was applied. The omnibus tests (Levene, ANOVA, Kruskal–Wallis) are parallel tests of the same null hypothesis and were not corrected against each other, and the Tukey HSD pairwise p-values and the Tukey–Kramer intervals carry Tukey's own family-wise adjustment. The **Small Market** segment had only **15 stores**, so its result rests on a small sample and I treated it more cautiously.
 
 ## 10. Scenario estimate of the revenue gap
 
@@ -265,7 +271,7 @@ The amounts are computed in `promotion_ab_test.ipynb` and saved in `outputs/busi
 1. **Promotion 2 had lower sales than both alternatives.** ANOVA, Kruskal–Wallis, and Tukey HSD support a difference, with Promotion 2 below the other two.
 2. **Promotions 1 and 3 could not be clearly separated.** Their difference was not statistically significant, which is not the same as proving that they are equal.
 3. **Market size is strongly associated with sales.** The estimated promotion difference remained after market-size adjustment (interaction p = 0.2659).
-4. **The result did not depend on a single test or unusual record.** Nonparametric testing, an outlier sensitivity analysis, and multiple-comparison corrections provided additional checks.
+4. **The result held across the checks that were run.** Nonparametric testing and an outlier sensitivity analysis gave the same conclusion, and the three market-size segment tests stayed significant after Bonferroni and Benjamini–Hochberg correction (pairwise differences within segments were not tested).
 
 ## 12. Business recommendation
 
@@ -293,7 +299,7 @@ If revenue performance is similar, the option with lower execution costs may be 
 | No promotion or operating cost data | Cannot assess profit, ROI, or full economic return |
 | No no-promotion group | Can compare alternatives, not absolute incremental promotion lift |
 | Limited operational detail | Stockouts, closures, or other unobserved conditions could matter |
-| Incomplete allocation documentation | A passing SRM check does not prove full random assignment |
+| Incomplete allocation documentation | The assignment procedure is not documented, and a passing SRM check does not prove random assignment |
 
 ## 14. Improvements I would make next
 
